@@ -1,13 +1,17 @@
 //! A simple 3D scene with light shining over a cube sitting on a plane.
 
 use bevy::prelude::*;
-use bevy_text_mesh::prelude::*;
+use bevy_egui::{egui, EguiContext, EguiPlugin};
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugins(TextMeshPlugin)
+        .init_resource::<UiState>()
+        .add_plugin(EguiPlugin)
         .add_startup_system(setup)
+        .add_startup_system(configure_visuals)
+        .add_system(ui_example)
+        .add_system(print_user_input)
         .run();
 }
 
@@ -45,13 +49,48 @@ fn setup(
         transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
         ..default()
     });
+}
 
-    // load font
-    let font: Handle<TextMeshFont> = asset_server.load("fonts/Hack Regular 400.ttf#mesh");
-    // Textmesh bundler
-    commands.spawn(TextMeshBundle {
-        text_mesh: TextMesh::new_with_color("Hello Bevy", font, Color::rgb(1., 1., 0.)),
-        transform: Transform::from_xyz(-1., 1.75, 0.),
-        ..default()
+#[derive(Resource, Default)]
+struct UiState {
+    user_input: String,
+    chat: Vec<String>
+}
+
+fn configure_visuals(mut egui_ctx: ResMut<EguiContext>) {
+    egui_ctx.ctx_mut().set_visuals(egui::Visuals {
+        window_rounding: 0.0.into(),
+        ..Default::default()
     });
+}
+
+fn ui_example(
+    mut egui_ctx: ResMut<EguiContext>,
+    mut ui_state: ResMut<UiState>
+) {
+
+    egui::SidePanel::left("side_panel")
+        .exact_width(200.0)
+        .show(egui_ctx.ctx_mut(), |ui| {
+            ui.heading("Chat");
+            ui.vertical(|ui| {
+                for line in ui_state.chat.iter() {
+                    ui.label(line);
+                }
+            });
+            ui.horizontal(|ui| {
+                ui.label("Chat: ");
+                ui.text_edit_singleline(&mut ui_state.user_input);
+                if ui.button("Send").clicked() {
+                    let text = ui_state.user_input.clone();
+                    ui_state.chat.push(text);
+                    ui_state.user_input = String::from("");
+                }
+            });
+        });
+
+}
+
+fn print_user_input(ui_state: ResMut<UiState>) {
+    println!("{}", ui_state.user_input);
 }
