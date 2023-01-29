@@ -3,6 +3,13 @@
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContext, EguiPlugin};
 
+use hello_world::greeter_client::GreeterClient;
+use hello_world::HelloRequest;
+
+pub mod hello_world {
+    tonic::include_proto!("helloworld");
+}
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
@@ -11,7 +18,7 @@ fn main() {
         .add_startup_system(setup)
         .add_startup_system(configure_visuals)
         .add_system(ui_example)
-        .add_system(print_user_input)
+        //.add_system(print_user_input)
         .run();
 }
 
@@ -85,6 +92,8 @@ fn ui_example(
                     let text = ui_state.user_input.clone();
                     ui_state.chat.push(text);
                     ui_state.user_input = String::from("");
+
+                    send_request();
                 }
             });
         });
@@ -93,4 +102,20 @@ fn ui_example(
 
 fn print_user_input(ui_state: ResMut<UiState>) {
     println!("{}", ui_state.user_input);
+}
+
+#[tokio::main]
+async fn send_request() -> Result<(), Box<dyn std::error::Error>> {
+    println!("Sending request");
+    let mut client = GreeterClient::connect("http://[::1]:50051").await?;
+
+    let request = tonic::Request::new(HelloRequest {
+        name: "Tonic".into(),
+    });
+
+    let response = client.say_hello(request).await?;
+
+    println!("RESPONSE={:?}", response);
+
+    Ok(())
 }
