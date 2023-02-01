@@ -75,7 +75,7 @@ impl ChatClient {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let chat_client = ChatClient {
-        client: ChatReqClient::connect("http://127.0.0.1:50051").await?,
+        client: ChatReqClient::connect("http://server.spacepirates.net:50051").await?,
         stream: None,
         runtime: tokio::runtime::Builder::new_multi_thread()
             .enable_io()
